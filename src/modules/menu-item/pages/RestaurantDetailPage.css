@@ -1,0 +1,138 @@
+.restaurant-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding-bottom: var(--space-8);
+}
+
+.restaurant-hero {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  height: 300px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.restaurant-hero__bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.restaurant-hero__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.1) 100%);
+  z-index: 1;
+}
+
+.restaurant-hero__content {
+  position: relative;
+  z-index: 2;
+  padding: var(--space-6);
+  color: white;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.menu-layout {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.menu-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 100px; /* Below the sticky header */
+  align-self: flex-start;
+  border-right: 1px solid var(--color-border);
+  padding-right: var(--space-4);
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .menu-sidebar {
+    display: block;
+  }
+}
+
+.menu-sidebar__link {
+  display: block;
+  padding: var(--space-3) 0;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+
+.menu-sidebar__link:hover, .menu-sidebar__link.active {
+  color: var(--color-primary);
+}
+
+.menu-content {
+  flex: 1;
+}
+
+.menu-item-card {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-6) 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+.menu-item-card:last-child {
+  border-bottom: none;
+}
+
+.menu-item-card__info {
+  flex: 1;
+  padding-right: var(--space-6);
+}
+
+.menu-item-card__image-container {
+  position: relative;
+  width: 156px;
+  height: 144px;
+  flex-shrink: 0;
+}
+
+.menu-item-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.menu-item-card__add-btn {
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-bg-primary);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  font-weight: 800;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-6);
+  min-width: 120px;
+  transition: all var(--transition-fast);
+}
+.menu-item-card__add-btn:hover {
+  background-color: var(--color-bg-hover);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}

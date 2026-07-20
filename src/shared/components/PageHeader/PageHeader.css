@@ -1,0 +1,16 @@
+.page-header {
+  margin-bottom: var(--space-6);
+}
+
+.page-header__breadcrumbs {
+  margin-bottom: var(--space-3);
+}
+
+.page-header__title {
+  margin-bottom: 0 !important;
+}
+
+.page-header__subtitle {
+  margin-top: var(--space-1);
+  display: block;
+}

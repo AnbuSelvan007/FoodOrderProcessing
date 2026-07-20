@@ -1,0 +1,10 @@
+/* ═══════════════════════════════════════════════════════════
+   FoodieGuy — Entry Stylesheet
+   ═══════════════════════════════════════════════════════════
+   Import order matters:
+   1. Design tokens first (variables)
+   2. Global resets and base styles
+   ═══════════════════════════════════════════════════════════ */
+
+@import './styles/variables.css';
+@import './styles/global.css';
