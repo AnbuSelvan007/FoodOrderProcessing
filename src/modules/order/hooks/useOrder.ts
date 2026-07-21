@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { App } from 'antd';
-import { createOrder, getOrders, getOrder, cancelOrder, getRestaurantOrders, updateOrderStatus } from '../api/order.api';
+import { createOrder, getOrders, getAllOrders, getOrder, cancelOrder, getRestaurantOrders, updateOrderStatus } from '../api/order.api';
 import type { CreateOrderRequest, OrderStatus } from '../types/order.types';
 
 export function useCreateOrder() {
@@ -30,6 +30,16 @@ export function useOrders() {
   });
 }
 
+export function useAllOrders() {
+  return useQuery({
+    queryKey: ['all-orders'],
+    queryFn: async () => {
+      const res = await getAllOrders();
+      return res.data || [];
+    },
+  });
+}
+
 export function useOrder(orderId: number) {
   return useQuery({
     queryKey: ['order', orderId],
@@ -49,7 +59,6 @@ export function useRestaurantOrders(restaurantId?: number) {
       return res.data || [];
     },
     enabled: !!restaurantId,
-    // Poll every 15 seconds so new orders appear automatically
     refetchInterval: 15000,
   });
 }
@@ -63,6 +72,7 @@ export function useUpdateOrderStatus() {
       updateOrderStatus(orderId, status),
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['restaurant-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['all-orders'] });
       message.success(`Order status updated to ${vars.status.replace(/_/g, ' ')}`);
     },
     onError: (error: any) => {
@@ -71,4 +81,3 @@ export function useUpdateOrderStatus() {
     },
   });
 }
-

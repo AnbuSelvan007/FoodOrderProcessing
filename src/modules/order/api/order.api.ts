@@ -45,6 +45,11 @@ export function getRestaurantOrders(
   return apiGet(`${BASE}/restaurant/${String(restaurantId)}`);
 }
 
+/** GET /api/v1/orders/all (Admin) */
+export function getAllOrders(): Promise<ApiResponse<OrderResponse[]>> {
+  return apiGet(`${BASE}/all`);
+}
+
 /** PATCH /api/v1/orders/:orderId/status */
 export function updateOrderStatus(
   orderId: number,

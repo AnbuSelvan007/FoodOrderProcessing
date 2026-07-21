@@ -1,6 +1,15 @@
 import { Layout, Menu, Flex, Typography, Dropdown, Avatar } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { HiOutlineUsers, HiOutlineBuildingStorefront, HiOutlineChartBarSquare, HiOutlineArrowRightOnRectangle, HiOutlineSun, HiOutlineMoon, HiOutlineShieldCheck } from 'react-icons/hi2';
+import {
+  HiOutlineUsers,
+  HiOutlineBuildingStorefront,
+  HiOutlineChartBarSquare,
+  HiOutlineArrowRightOnRectangle,
+  HiOutlineSun,
+  HiOutlineMoon,
+  HiOutlineShieldCheck,
+  HiOutlineUser,
+} from 'react-icons/hi2';
 import { useAuthStore } from '@/modules/auth/store/auth.store';
 import { useThemeStore } from '@/shared/store/theme.store';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
@@ -21,6 +30,7 @@ export function AdminLayout() {
     { key: '/admin/approvals', icon: <HiOutlineShieldCheck />, label: 'Restaurant Approvals' },
     { key: '/admin/users', icon: <HiOutlineUsers />, label: 'User Management' },
     { key: '/admin/restaurants', icon: <HiOutlineBuildingStorefront />, label: 'All Restaurants' },
+    { key: '/admin/profile', icon: <HiOutlineUser />, label: 'My Profile' },
   ];
 
   return (
@@ -57,6 +67,8 @@ export function AdminLayout() {
             <Dropdown
               menu={{
                 items: [
+                  { key: 'profile', label: 'My Profile', icon: <HiOutlineUser />, onClick: () => navigate('/admin/profile') },
+                  { type: 'divider' as const },
                   { key: 'logout', label: 'Logout', danger: true, icon: <HiOutlineArrowRightOnRectangle />, onClick: () => { logout(); navigate('/login'); } },
                 ],
               }}

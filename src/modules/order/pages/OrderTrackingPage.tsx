@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Typography, Flex, Button, Tag, Avatar, Divider, Spin } from 'antd';
 import { useParams } from 'react-router-dom';
-import { HiOutlineCheck, HiOutlinePhone, HiOutlineBuildingStorefront, HiOutlineTruck, HiOutlineSparkles, HiOutlineCheckCircle } from 'react-icons/hi2';
+import { HiOutlineCheck, HiOutlinePhone, HiOutlineBuildingStorefront, HiOutlineTruck, HiOutlineSparkles, HiOutlineCheckCircle, HiStar } from 'react-icons/hi2';
 import { useOrder } from '../hooks/useOrder';
+import { useOrderDeliveryHistory } from '@/modules/delivery/hooks/useDelivery';
 import { OrderStatus } from '../types/order.types';
+import { ReviewModal } from '../components/ReviewModal';
 import './OrderTrackingPage.css';
 
 const { Title, Text } = Typography;
@@ -19,7 +21,10 @@ const STEPS = [
 
 export function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: order, isLoading } = useOrder(Number(id));
+  const orderId = Number(id);
+  const { data: order, isLoading } = useOrder(orderId);
+  const { data: deliveryHistory = [] } = useOrderDeliveryHistory(orderId);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -37,6 +42,7 @@ export function OrderTrackingPage() {
     );
   }
 
+  const activeDelivery = deliveryHistory[0];
   const currentStepIndex = STEPS.findIndex(step => step.id === order.status);
   
   // Calculate ETA if available
@@ -95,22 +101,51 @@ export function OrderTrackingPage() {
         </div>
       </div>
 
-      {/* Delivery Partner Details Card (Hidden until real API provides it) */}
-      {false && (
+      {/* Rate Order & Valet Card when Delivered */}
+      {order.status === OrderStatus.DELIVERED && (
+        <div className="tracking-card" style={{ background: 'var(--color-primary-bg)', border: '1px solid var(--color-primary-border)' }}>
+          <Flex justify="space-between" align="center">
+            <div>
+              <Title level={5} style={{ margin: 0, fontWeight: 800 }}>
+                Enjoyed your meal?
+              </Title>
+              <Text type="secondary" style={{ fontSize: '0.85rem' }}>
+                Rate the food quality & your delivery partner
+              </Text>
+            </div>
+            <Button
+              type="primary"
+              icon={<HiStar color="#faad14" />}
+              size="large"
+              onClick={() => setIsReviewModalOpen(true)}
+              style={{ fontWeight: 700 }}
+            >
+              Rate Order & Valet
+            </Button>
+          </Flex>
+        </div>
+      )}
+
+      {/* Delivery Partner Details Card */}
+      {activeDelivery && (
         <div className="tracking-card">
           <Title level={5} style={{ marginBottom: 16, fontWeight: 800 }}>Delivery Valet Assigned</Title>
           <div className="driver-card">
             <Flex align="center" gap={16}>
-              <Avatar size={48} style={{ backgroundColor: 'var(--color-primary)' }}>
-                D
+              <Avatar size={48} style={{ backgroundColor: '#207945', fontWeight: 800 }}>
+                {activeDelivery.deliveryPartnerName?.[0]?.toUpperCase() || 'D'}
               </Avatar>
               <div>
-                <Title level={5} style={{ margin: 0, fontWeight: 700 }}>Driver Name</Title>
-                <Text type="secondary" style={{ fontSize: '0.85rem' }}>Vehicle: --</Text>
+                <Title level={5} style={{ margin: 0, fontWeight: 700 }}>
+                  {activeDelivery.deliveryPartnerName}
+                </Title>
+                <Text type="secondary" style={{ fontSize: '0.85rem' }}>
+                  Status: {activeDelivery.status.replace(/_/g, ' ')}
+                </Text>
               </div>
             </Flex>
             <Button type="primary" shape="round" icon={<HiOutlinePhone />} size="large">
-              Call Valet
+              Contact Valet
             </Button>
           </div>
         </div>
@@ -131,6 +166,17 @@ export function OrderTrackingPage() {
           <Title level={5} style={{ margin: 0, color: 'var(--color-primary)' }}>₹{order.totalAmount}</Title>
         </Flex>
       </div>
+
+      {/* Review Modal */}
+      {isReviewModalOpen && (
+        <ReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={() => setIsReviewModalOpen(false)}
+          orderId={order.id}
+          restaurantId={order.restaurant?.id || 1}
+          deliveryAssignmentId={activeDelivery?.id}
+        />
+      )}
     </div>
   );
 }

@@ -47,6 +47,7 @@ const DeliveryProfilePage = lazy(() => import('@/modules/delivery/pages/Delivery
 const AdminDashboardPage = lazy(() => import('@/modules/admin/pages/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
 const RestaurantApprovalsPage = lazy(() => import('@/modules/admin/pages/RestaurantApprovalsPage').then(m => ({ default: m.RestaurantApprovalsPage })));
 const UserManagementPage = lazy(() => import('@/modules/admin/pages/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
+const AdminRestaurantsPage = lazy(() => import('@/modules/admin/pages/AdminRestaurantsPage').then(m => ({ default: m.AdminRestaurantsPage })));
 
 /**
  * Global Router Configuration
@@ -298,7 +299,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'restaurants',
-        element: <div>All Restaurants management coming soon</div>,
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <AdminRestaurantsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <ProfilePage />
+          </Suspense>
+        ),
       },
     ],
   },
