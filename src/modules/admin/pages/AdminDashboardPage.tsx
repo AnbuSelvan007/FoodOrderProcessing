@@ -11,6 +11,7 @@ import { useRestaurants } from '../../restaurant/hooks/useRestaurants';
 import { useAdminUsers } from '../hooks/useAdminUsers';
 import { useDeliveryPartners } from '../../delivery/hooks/useAdminDelivery';
 import { useAllOrders } from '../../order/hooks/useOrder';
+import { useAdminAnalyticsSocket } from '@/shared/hooks/useWebSocketSubscription';
 
 const { Title, Text } = Typography;
 
@@ -19,6 +20,9 @@ export function AdminDashboardPage() {
   const { users = [], isLoading: isLoadingUsers } = useAdminUsers();
   const { data: deliveryPartners = [], isLoading: isLoadingPartners } = useDeliveryPartners();
   const { data: orders = [], isLoading: isLoadingOrders } = useAllOrders();
+
+  // Subscribe to live WebSocket STOMP admin analytics updates
+  useAdminAnalyticsSocket();
 
   const isLoading = isLoadingRestaurants || isLoadingUsers || isLoadingPartners || isLoadingOrders;
 

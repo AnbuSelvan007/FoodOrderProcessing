@@ -48,6 +48,7 @@ export function useOrder(orderId: number) {
       return res.data;
     },
     enabled: !!orderId,
+    refetchInterval: 5000,
   });
 }
 

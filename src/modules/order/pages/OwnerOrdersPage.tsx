@@ -2,6 +2,7 @@ import { Typography, Flex, Card, Row, Col, Tag, Button, Spin, Empty, Badge } fro
 import { HiOutlineCheck, HiOutlineXMark, HiOutlineArrowPath } from 'react-icons/hi2';
 import { useMyRestaurants } from '@/modules/restaurant/hooks/useMyRestaurants';
 import { useRestaurantOrders, useUpdateOrderStatus } from '../hooks/useOrder';
+import { useOwnerOrdersSocket } from '@/shared/hooks/useWebSocketSubscription';
 import { OrderStatus } from '../types/order.types';
 import type { OrderResponse } from '../types/order.types';
 
@@ -105,11 +106,24 @@ function OrderCard({ order, col, onNext, onReject, isPending }: OrderCardProps) 
 }
 
 export function OwnerOrdersPage() {
-  const { data: restaurants = [], isLoading: restaurantsLoading } = useMyRestaurants();
-  const restaurant = restaurants[0];
+  const { data: myRestaurants = [], isLoading: restaurantsLoading } = useMyRestaurants();
+  const restaurant = myRestaurants[0]; // Active owner restaurant
 
   const { data: orders = [], isLoading: ordersLoading, refetch } = useRestaurantOrders(restaurant?.id);
   const { mutate: updateStatus, isPending } = useUpdateOrderStatus();
+
+  // Connect live WebSocket STOMP subscription for real-time orders
+  useOwnerOrdersSocket(restaurant?.id);
+
+  // Frontend safety-net: only show orders the restaurant still needs to act on.
+  // Orders at OUT_FOR_DELIVERY / DELIVERED are the delivery partner's responsibility now.
+  const KANBAN_ACTIVE = new Set([
+    OrderStatus.PLACED,
+    OrderStatus.ACCEPTED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+  ]);
+  const kanbanOrders = orders.filter((o) => KANBAN_ACTIVE.has(o.status as OrderStatus));
 
   const handleNext = (orderId: number, status: OrderStatus) => {
     updateStatus({ orderId, status });
@@ -151,7 +165,7 @@ export function OwnerOrdersPage() {
 
       <Row gutter={[16, 16]}>
         {COLUMN_CONFIG.map((col) => {
-          const colOrders = orders.filter((o) => o.status === col.status);
+          const colOrders = kanbanOrders.filter((o) => o.status === col.status);
           return (
             <Col key={col.status} xs={24} md={6}>
               <Card

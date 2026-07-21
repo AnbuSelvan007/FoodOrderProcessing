@@ -1,23 +1,37 @@
 import { useState } from 'react';
 import { Typography, Flex, Button, Tag, Avatar, Divider, Spin } from 'antd';
 import { useParams } from 'react-router-dom';
-import { HiOutlineCheck, HiOutlinePhone, HiOutlineBuildingStorefront, HiOutlineTruck, HiOutlineSparkles, HiOutlineCheckCircle, HiStar } from 'react-icons/hi2';
+import { HiOutlinePhone, HiOutlineBuildingStorefront, HiStar } from 'react-icons/hi2';
 import { useOrder } from '../hooks/useOrder';
 import { useOrderDeliveryHistory } from '@/modules/delivery/hooks/useDelivery';
+import { useOrderTrackingSocket } from '@/shared/hooks/useWebSocketSubscription';
+import { OrderProgressStepper } from '@/shared/components/OrderProgressStepper';
 import { OrderStatus } from '../types/order.types';
 import { ReviewModal } from '../components/ReviewModal';
 import './OrderTrackingPage.css';
 
 const { Title, Text } = Typography;
 
-const STEPS = [
-  { id: OrderStatus.PLACED, title: 'Order Placed', icon: HiOutlineCheck },
-  { id: OrderStatus.ACCEPTED, title: 'Confirmed', icon: HiOutlineBuildingStorefront },
-  { id: OrderStatus.PREPARING, title: 'Preparing', icon: HiOutlineSparkles },
-  { id: OrderStatus.READY, title: 'Ready', icon: HiOutlineSparkles },
-  { id: OrderStatus.OUT_FOR_DELIVERY, title: 'On the way', icon: HiOutlineTruck },
-  { id: OrderStatus.DELIVERED, title: 'Delivered', icon: HiOutlineCheckCircle },
-];
+/** Progression rank for each OrderStatus — used to pick the furthest step */
+const STATUS_RANK: Record<string, number> = {
+  PLACED:           0,
+  ACCEPTED:         1,
+  PREPARING:        2,
+  READY:            3,
+  OUT_FOR_DELIVERY: 4,
+  DELIVERED:        5,
+  CANCELLED:        -1,
+};
+
+/** Maps a DeliveryStatus → the implied OrderStatus for rank comparison */
+const DELIVERY_IMPLIES_ORDER: Record<string, string> = {
+  ASSIGNED:         'READY',
+  ACCEPTED:         'READY',
+  PICKED_UP:        'OUT_FOR_DELIVERY',
+  OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
+  DELIVERED:        'DELIVERED',
+};
+
 
 export function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +39,9 @@ export function OrderTrackingPage() {
   const { data: order, isLoading } = useOrder(orderId);
   const { data: deliveryHistory = [] } = useOrderDeliveryHistory(orderId);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+
+  // Subscribe to live WebSocket updates for this order
+  useOrderTrackingSocket(orderId);
 
   if (isLoading) {
     return (
@@ -43,16 +60,31 @@ export function OrderTrackingPage() {
   }
 
   const activeDelivery = deliveryHistory[0];
-  const currentStepIndex = STEPS.findIndex(step => step.id === order.status);
-  
-  // Calculate ETA if available
+
+  // Derive the most-advanced status between order DB value and delivery status.
+  // Delivery status can be ahead of order.status when DB sync is delayed.
+  let effectiveStatus: string = order.status;
+  if (activeDelivery) {
+    const impliedByDelivery = DELIVERY_IMPLIES_ORDER[activeDelivery.status];
+    if (impliedByDelivery) {
+      const orderRank    = STATUS_RANK[order.status]       ?? 0;
+      const deliveryRank = STATUS_RANK[impliedByDelivery]  ?? 0;
+      if (deliveryRank > orderRank) {
+        effectiveStatus = impliedByDelivery;
+      }
+    }
+  }
+
+  // ETA / headline text — use effectiveStatus so it stays in sync
   let etaText = 'Calculating ETA...';
-  if (order.status === OrderStatus.PLACED) {
+  if (effectiveStatus === OrderStatus.PLACED) {
     etaText = 'Awaiting Confirmation...';
   } else if (order.status === OrderStatus.CANCELLED) {
     etaText = 'Order Cancelled';
-  } else if (order.status === OrderStatus.DELIVERED) {
-    etaText = 'Order Delivered!';
+  } else if (effectiveStatus === OrderStatus.DELIVERED) {
+    etaText = 'Order Delivered! 🎉';
+  } else if (effectiveStatus === OrderStatus.OUT_FOR_DELIVERY) {
+    etaText = 'Your order is on the way! 🛵';
   } else if (order.estimatedDeliveryTime) {
     const diffMs = new Date(order.estimatedDeliveryTime).getTime() - new Date().getTime();
     const minutesLeft = Math.max(0, Math.floor(diffMs / (1000 * 60)));
@@ -80,29 +112,12 @@ export function OrderTrackingPage() {
           </div>
         </Flex>
 
-        {/* Live Stepper */}
-        <div className="tracking-stepper">
-          {STEPS.map((step, idx) => {
-            const Icon = step.icon;
-            const isCompleted = idx <= currentStepIndex;
-            const isActive = idx === currentStepIndex;
-
-            return (
-              <div key={step.id} className={`stepper-step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}>
-                <div className="stepper-circle">
-                  <Icon size={20} />
-                </div>
-                <Text strong style={{ fontSize: '0.8rem', textAlign: 'center' }}>
-                  {step.title}
-                </Text>
-              </div>
-            );
-          })}
-        </div>
+        {/* Unified Live Stepper — uses effectiveStatus so delivery status updates are reflected */}
+        <OrderProgressStepper status={effectiveStatus} />
       </div>
 
       {/* Rate Order & Valet Card when Delivered */}
-      {order.status === OrderStatus.DELIVERED && (
+      {effectiveStatus === OrderStatus.DELIVERED && (
         <div className="tracking-card" style={{ background: 'var(--color-primary-bg)', border: '1px solid var(--color-primary-border)' }}>
           <Flex justify="space-between" align="center">
             <div>

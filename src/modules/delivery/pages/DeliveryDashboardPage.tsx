@@ -1,6 +1,8 @@
-import { Typography, Flex, Card, Button, Tag, Spin, App } from 'antd';
-import { HiOutlineBuildingStorefront, HiOutlineMapPin, HiOutlinePhone } from 'react-icons/hi2';
+import { Typography, Flex, Card, Button, Tag, Spin } from 'antd';
+import { HiOutlineBuildingStorefront, HiOutlineMapPin } from 'react-icons/hi2';
 import { useMyDeliveries, useUpdateDeliveryStatus } from '../hooks/useDelivery';
+import { useDeliveryTaskSocket } from '@/shared/hooks/useWebSocketSubscription';
+import { OrderProgressStepper } from '@/shared/components/OrderProgressStepper';
 import { DeliveryStatus } from '../types/delivery.types';
 import { EmptyState } from '@/shared/components/EmptyState';
 
@@ -15,15 +17,18 @@ const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
 };
 
 const BUTTON_LABEL: Partial<Record<DeliveryStatus, string>> = {
-  [DeliveryStatus.ASSIGNED]:         'ACCEPT TASK',
-  [DeliveryStatus.ACCEPTED]:         'CONFIRM PICKUP',
-  [DeliveryStatus.PICKED_UP]:        'REACHED CUSTOMER LOCATION',
-  [DeliveryStatus.OUT_FOR_DELIVERY]: 'MARK ORDER DELIVERED',
+  [DeliveryStatus.ASSIGNED]:         '✅ ACCEPT DELIVERY TASK',
+  [DeliveryStatus.ACCEPTED]:         '📦 CONFIRM PICKED UP FROM RESTAURANT',
+  [DeliveryStatus.PICKED_UP]:        '🛵 MARK OUT FOR DELIVERY',
+  [DeliveryStatus.OUT_FOR_DELIVERY]: '🏁 MARK ORDER DELIVERED',
 };
 
 export function DeliveryDashboardPage() {
   const { data: deliveries = [], isLoading } = useMyDeliveries();
   const { mutate: updateStatus, isPending } = useUpdateDeliveryStatus();
+
+  // Subscribe to live WebSocket STOMP delivery task notifications
+  useDeliveryTaskSocket();
 
   // Active delivery = any that isn't DELIVERED / CANCELLED / REJECTED
   const activeDelivery = deliveries.find(
@@ -105,6 +110,14 @@ export function DeliveryDashboardPage() {
             )}
           </div>
         </Flex>
+      </Card>
+
+      {/* Unified Order Progress Stepper */}
+      <Card style={{ borderRadius: 'var(--radius-xl)', padding: '8px 0' }}>
+        <Title level={5} style={{ marginBottom: 12, textAlign: 'center' }}>
+          Order Progress
+        </Title>
+        <OrderProgressStepper status={activeDelivery.status} mode="delivery" />
       </Card>
 
       {/* Action Button */}
