@@ -35,10 +35,13 @@ const OrderHistoryPage = lazy(() => import('@/modules/order/pages/OrderHistoryPa
 const OwnerDashboardPage = lazy(() => import('@/modules/restaurant/pages/OwnerDashboardPage').then(m => ({ default: m.OwnerDashboardPage })));
 const OwnerMenuPage = lazy(() => import('@/modules/menu-item/pages/OwnerMenuPage').then(m => ({ default: m.OwnerMenuPage })));
 const OwnerOrdersPage = lazy(() => import('@/modules/order/pages/OwnerOrdersPage').then(m => ({ default: m.OwnerOrdersPage })));
+const OwnerRestaurantInfoPage = lazy(() => import('@/modules/restaurant/pages/OwnerRestaurantInfoPage').then(m => ({ default: m.OwnerRestaurantInfoPage })));
 
 // Delivery Flow
 const DeliveryDashboardPage = lazy(() => import('@/modules/delivery/pages/DeliveryDashboardPage').then(m => ({ default: m.DeliveryDashboardPage })));
 const DeliveryEarningsPage = lazy(() => import('@/modules/delivery/pages/DeliveryEarningsPage').then(m => ({ default: m.DeliveryEarningsPage })));
+const DeliveryHistoryPage = lazy(() => import('@/modules/delivery/pages/DeliveryHistoryPage').then(m => ({ default: m.DeliveryHistoryPage })));
+const DeliveryProfilePage = lazy(() => import('@/modules/delivery/pages/DeliveryProfilePage').then(m => ({ default: m.DeliveryProfilePage })));
 
 // Admin Flow
 const AdminDashboardPage = lazy(() => import('@/modules/admin/pages/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
@@ -187,7 +190,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'restaurants',
-        element: <div>Restaurant Info coming soon</div>,
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <OwnerRestaurantInfoPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <ProfilePage />
+          </Suspense>
+        ),
       },
     ],
   },
@@ -225,7 +240,19 @@ export const router = createBrowserRouter([
       },
       {
         path: 'history',
-        element: <div>Delivery History coming soon</div>,
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <DeliveryHistoryPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <Suspense fallback={<LoadingScreen />}>
+            <DeliveryProfilePage />
+          </Suspense>
+        ),
       },
     ],
   },

@@ -17,11 +17,9 @@ export function createOrder(
   return apiPost(BASE, data);
 }
 
-/** GET /api/v1/orders (paginated, current user's orders) */
-export function getOrders(
-  params?: { page?: number; size?: number },
-): Promise<ApiResponse<PaginatedResponse<OrderResponse>>> {
-  return apiGet(BASE, { params });
+/** GET /api/v1/orders (current user's orders) */
+export function getOrders(): Promise<ApiResponse<OrderResponse[]>> {
+  return apiGet(BASE);
 }
 
 /** GET /api/v1/orders/:orderId */
@@ -40,12 +38,11 @@ export function cancelOrder(
 
 // ─── Owner / Admin ──────────────────────────────────────────
 
-/** GET /api/v1/orders/restaurant/:restaurantId (paginated) */
+/** GET /api/v1/orders/restaurant/:restaurantId */
 export function getRestaurantOrders(
   restaurantId: number,
-  params?: { page?: number; size?: number },
-): Promise<ApiResponse<PaginatedResponse<OrderResponse>>> {
-  return apiGet(`${BASE}/restaurant/${String(restaurantId)}`, { params });
+): Promise<ApiResponse<OrderResponse[]>> {
+  return apiGet(`${BASE}/restaurant/${String(restaurantId)}`);
 }
 
 /** PATCH /api/v1/orders/:orderId/status */

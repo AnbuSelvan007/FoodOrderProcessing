@@ -16,7 +16,7 @@ export function HomePage() {
   const { data: restaurants, isLoading: isLoadingRestaurants, isError: isErrorRestaurants } = useRestaurants();
   const { data: menuItems, isLoading: isLoadingMenu } = useAllMenuItems();
   const { addItem, isAdding } = useCart();
-  const { openCartDrawer } = useUiStore();
+  const { openCartDrawer, searchQuery } = useUiStore();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const toggleFilter = (filterName: string) => {
@@ -34,6 +34,52 @@ export function HomePage() {
     });
   };
 
+  // Filter Featured Food items
+  const filteredMenuItems = (menuItems || []).filter((item) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        item.name.toLowerCase().includes(q) ||
+        item.description?.toLowerCase().includes(q) ||
+        item.categoryName?.toLowerCase().includes(q) ||
+        item.restaurantName?.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+    }
+
+    if (activeFilters.includes('veg') && !item.veg) return false;
+    if (activeFilters.includes('budget') && item.price >= 300) return false;
+    if (activeFilters.includes('fast') && item.preparationTime > 30) return false;
+
+    return true;
+  });
+
+  // Filter Restaurants
+  const filteredRestaurants = (restaurants || []).filter((restaurant) => {
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchesRestaurant =
+        restaurant.name.toLowerCase().includes(q) ||
+        restaurant.description?.toLowerCase().includes(q) ||
+        restaurant.address?.toLowerCase().includes(q) ||
+        restaurant.city?.toLowerCase().includes(q);
+
+      const matchesMenuItem = menuItems?.some(
+        (m) => m.restaurantId === restaurant.id && (m.name.toLowerCase().includes(q) || m.categoryName?.toLowerCase().includes(q))
+      );
+
+      if (!matchesRestaurant && !matchesMenuItem) return false;
+    }
+
+    if (activeFilters.includes('veg')) {
+      const hasVegItem = menuItems?.some((m) => m.restaurantId === restaurant.id && m.veg);
+      if (!hasVegItem) return false;
+    }
+    if (activeFilters.includes('budget') && restaurant.minimumOrderAmount > 300) return false;
+    if (activeFilters.includes('fast') && (restaurant.averagePreparationTime || 30) > 30) return false;
+
+    return true;
+  });
+
   if (isLoadingRestaurants || isLoadingMenu) {
     return (
       <Flex justify="center" align="center" style={{ minHeight: '50vh' }}>
@@ -49,12 +95,12 @@ export function HomePage() {
   return (
     <div className="homepage-container">
       {/* Featured Menu Items (Replacing mock categories) */}
-      {(restaurants && restaurants.length > 0) && <section style={{ marginTop: 8 }}>
+      <section style={{ marginTop: 8 }}>
         <Title level={4} style={{ marginBottom: 'var(--space-4)', fontWeight: 800 }}>
-          What's on your mind? (Featured Foods)
+          {searchQuery ? `Dishes matching "${searchQuery}"` : "What's on your mind? (Featured Foods)"}
         </Title>
         <div style={{ display: 'flex', overflowX: 'auto', gap: 16, paddingBottom: 16 }}>
-          {menuItems?.slice(0, 10).map((item) => (
+          {filteredMenuItems.slice(0, 10).map((item) => (
             <Card 
               key={item.id} 
               hoverable 
@@ -74,62 +120,60 @@ export function HomePage() {
               </Flex>
             </Card>
           ))}
-          {(!menuItems || menuItems.length === 0) && (
-            <Text type="secondary">No menu items available globally.</Text>
+          {filteredMenuItems.length === 0 && (
+            <Text type="secondary">No menu items match your search or filters.</Text>
           )}
         </div>
-      </section>}
+      </section>
 
       {/* Filter & Sort Pills Bar */}
-      {(restaurants && restaurants.length > 0 || activeFilters.length > 0) && (
-        <section style={{ marginTop: 12 }}>
-          <div className="filter-pills-bar">
-            <div className="filter-pill">
-              <HiOutlineAdjustmentsHorizontal size={16} /> Filter
-            </div>
-            <div
-              className={`filter-pill ${activeFilters.includes('fast') ? 'active' : ''}`}
-              onClick={() => toggleFilter('fast')}
-            >
-              Fast Delivery
-            </div>
-            <div
-              className={`filter-pill ${activeFilters.includes('rating') ? 'active' : ''}`}
-              onClick={() => toggleFilter('rating')}
-            >
-              Ratings 4.0+
-            </div>
-            <div
-              className={`filter-pill ${activeFilters.includes('veg') ? 'active' : ''}`}
-              onClick={() => toggleFilter('veg')}
-            >
-              Pure Veg
-            </div>
-            <div
-              className={`filter-pill ${activeFilters.includes('budget') ? 'active' : ''}`}
-              onClick={() => toggleFilter('budget')}
-            >
-              Less than ₹300
-            </div>
+      <section style={{ marginTop: 12 }}>
+        <div className="filter-pills-bar">
+          <div className="filter-pill">
+            <HiOutlineAdjustmentsHorizontal size={16} /> Filter
           </div>
-        </section>
-      )}
+          <div
+            className={`filter-pill ${activeFilters.includes('fast') ? 'active' : ''}`}
+            onClick={() => toggleFilter('fast')}
+          >
+            Fast Delivery
+          </div>
+          <div
+            className={`filter-pill ${activeFilters.includes('rating') ? 'active' : ''}`}
+            onClick={() => toggleFilter('rating')}
+          >
+            Ratings 4.0+
+          </div>
+          <div
+            className={`filter-pill ${activeFilters.includes('veg') ? 'active' : ''}`}
+            onClick={() => toggleFilter('veg')}
+          >
+            Pure Veg
+          </div>
+          <div
+            className={`filter-pill ${activeFilters.includes('budget') ? 'active' : ''}`}
+            onClick={() => toggleFilter('budget')}
+          >
+            Less than ₹300
+          </div>
+        </div>
+      </section>
 
       {/* Restaurant Grid */}
       <section style={{ marginTop: 16 }}>
-       {(restaurants && restaurants.length > 0)  && <Title level={4} style={{ marginBottom: 'var(--space-6)', fontWeight: 800 }}>
-          Top restaurant chains in Bangalore
-        </Title>}
+        <Title level={4} style={{ marginBottom: 'var(--space-6)', fontWeight: 800 }}>
+          {searchQuery ? `Restaurants matching "${searchQuery}"` : "Top restaurant chains in Bangalore"}
+        </Title>
         <div className="restaurant-grid">
-          {restaurants?.length === 0 && (
+          {filteredRestaurants.length === 0 && (
             <div style={{ gridColumn: '1 / -1', padding: '40px 0' }}>
               <EmptyState 
                 title="No Restaurants Found" 
-                description="We couldn't find any restaurants matching your criteria right now. Try adjusting your filters." 
+                description="We couldn't find any restaurants matching your criteria right now. Try adjusting your search or filters." 
               />
             </div>
           )}
-          {restaurants?.map((restaurant) => (
+          {filteredRestaurants.map((restaurant) => (
             <Card
               key={restaurant.id}
               hoverable
@@ -144,7 +188,7 @@ export function HomePage() {
                   src={restaurant.imageUrl || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80'}
                 />
 
-                {!restaurant.isOpen && (
+                {restaurant.availability !== 'OPEN' && (
                   <div className="restaurant-card__closed-overlay">
                     <Title level={5} style={{ margin: 0, color: '#fff', fontWeight: 800, letterSpacing: '1px' }}>
                       CLOSED
@@ -170,7 +214,7 @@ export function HomePage() {
                     {restaurant.name}
                   </Title>
                   <Tag
-                    color="#24963f"
+                    color="success"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -180,7 +224,6 @@ export function HomePage() {
                       padding: '2px 6px',
                       borderRadius: '6px',
                       border: 'none',
-                      color: '#fff',
                       margin: 0,
                     }}
                   >

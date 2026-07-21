@@ -22,7 +22,7 @@ export enum PaymentStatus {
 export interface OrderItemResponse {
   id: number;
   itemName: string;
-  veg: boolean;
+  isVeg: boolean;
   quantity: number;
   price: number;
   subtotal: number;
@@ -31,8 +31,10 @@ export interface OrderItemResponse {
 export interface OrderResponse {
   id: number;
   orderNumber: string;
-  restaurantId: number;
-  restaurantName: string;
+  restaurant: {
+    id: number;
+    name: string;
+  };
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   subtotal: number;

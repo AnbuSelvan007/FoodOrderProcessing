@@ -7,6 +7,7 @@ import { useAddresses } from '@/modules/address/hooks/useAddresses';
 import { AddressSelectionModal } from '@/modules/address/components/AddressSelectionModal';
 import { useCart } from '@/modules/cart/hooks/useCart';
 import { usePayment } from '@/modules/payment/hooks/usePayment';
+import { useCreateOrder } from '../hooks/useOrder';
 import { PaymentMethod } from '@/modules/payment/types/payment.types';
 import './CheckoutPage.css';
 
@@ -24,8 +25,8 @@ export function CheckoutPage() {
   const displayAddress = addresses.find(a => a.id === selectedAddressId) || addresses.find(a => a.isDefault) || addresses[0];
 
   const { cart, isLoading, clearCart } = useCart();
-  const { createPayment, isCreating: isPlacing } = usePayment();
-  
+  const { createPayment, isCreating: isPlacingPayment } = usePayment();
+  const { mutateAsync: createOrderAsync, isPending: isCreatingOrder } = useCreateOrder();
   const cartItems = cart?.items || [];
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const taxes = subtotal * 0.05;
@@ -33,9 +34,17 @@ export function CheckoutPage() {
   const total = subtotal + taxes + delivery;
 
   const handlePlaceOrder = async () => {
+    if (!displayAddress) {
+      message.error("Please select a delivery address.");
+      return;
+    }
+
     try {
-      // Assuming order is created first, we'll use a placeholder orderId of 1024 for this demo
-      const orderId = 1024;
+      const orderResponse = await createOrderAsync({
+        addressId: displayAddress.id,
+      });
+      
+      const orderId = orderResponse.data.id;
       
       await createPayment({
         orderId,
@@ -45,7 +54,7 @@ export function CheckoutPage() {
       closeCartDrawer();
       message.success('Payment completed and Order placed successfully!');
       clearCart();
-      navigate('/order-tracking/1024');
+      navigate(`/order-tracking/${orderId}`);
     } catch (error) {
       // Error handled in hook
     }
@@ -204,7 +213,7 @@ export function CheckoutPage() {
             type="primary" 
             size="large" 
             block 
-            loading={isPlacing} 
+            loading={isCreatingOrder || isPlacingPayment} 
             onClick={handlePlaceOrder}
             style={{ height: 50, borderRadius: 'var(--radius-lg)', fontWeight: 800, fontSize: '1.1rem' }}
           >

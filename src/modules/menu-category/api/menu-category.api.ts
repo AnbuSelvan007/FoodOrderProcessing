@@ -8,6 +8,11 @@ import type {
 
 const BASE = '/menu-categories';
 
+/** GET /api/v1/menu-categories */
+export function getAllCategories(): Promise<ApiResponse<CategoryResponse[]>> {
+  return apiGet(BASE);
+}
+
 /** GET /api/v1/menu-categories/:id */
 export function getCategory(
   id: number,

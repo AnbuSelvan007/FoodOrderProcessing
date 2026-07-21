@@ -16,7 +16,7 @@ const { Title, Text } = Typography;
 export function CustomerLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { openCartDrawer } = useUiStore();
+  const { toggleCartDrawer } = useUiStore();
   const { theme, setTheme } = useThemeStore();
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<number | undefined>();
@@ -73,6 +73,9 @@ export function CustomerLayout() {
             <Input 
               size="large" 
               placeholder="Search for restaurants, cuisine or a dish" 
+              value={useUiStore((s) => s.searchQuery)}
+              onChange={(e) => useUiStore.getState().setSearchQuery(e.target.value)}
+              allowClear
               prefix={<HiOutlineMagnifyingGlass size={18} color="var(--color-text-tertiary)" />}
               style={{ borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)' }}
             />
@@ -97,7 +100,7 @@ export function CustomerLayout() {
             {/* Cart Icon with Badge */}
             <div 
               style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
-              onClick={openCartDrawer}
+              onClick={toggleCartDrawer}
             >
               <Badge count={0} color="var(--color-primary)" size="small">
                 <HiOutlineShoppingBag size={26} color="var(--color-text-primary)" />

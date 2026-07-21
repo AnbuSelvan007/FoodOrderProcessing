@@ -71,15 +71,23 @@
 
 .menu-sidebar__link {
   display: block;
-  padding: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
   cursor: pointer;
   color: var(--color-text-secondary);
   font-weight: 600;
-  transition: color var(--transition-fast);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
 }
 
-.menu-sidebar__link:hover, .menu-sidebar__link.active {
+.menu-sidebar__link:hover {
   color: var(--color-primary);
+  background-color: var(--color-bg-hover);
+}
+
+.menu-sidebar__link.active {
+  color: var(--color-primary);
+  background-color: rgba(250, 84, 28, 0.1); /* Primary color with 10% opacity */
+  font-weight: 800;
 }
 
 .menu-content {

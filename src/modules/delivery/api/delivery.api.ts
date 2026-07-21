@@ -53,6 +53,13 @@ export function getMyDeliveries(): Promise<ApiResponse<DeliveryAssignmentRespons
   return apiGet(`${BASE}/my-deliveries`);
 }
 
+/** PATCH /api/v1/delivery/my-availability?available=true|false */
+export function updateMyAvailability(
+  available: boolean,
+): Promise<ApiResponse<DeliveryPartnerResponse>> {
+  return apiPatch(`${BASE}/my-availability?available=${available}`, {});
+}
+
 // ─── Shared ─────────────────────────────────────────────────
 
 /** GET /api/v1/delivery/orders/:orderId */

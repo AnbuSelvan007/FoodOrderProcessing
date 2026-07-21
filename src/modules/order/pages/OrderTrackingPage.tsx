@@ -1,30 +1,57 @@
 import { useState, useEffect } from 'react';
-import { Typography, Flex, Button, Tag, Avatar, Divider } from 'antd';
+import { Typography, Flex, Button, Tag, Avatar, Divider, Spin } from 'antd';
+import { useParams } from 'react-router-dom';
 import { HiOutlineCheck, HiOutlinePhone, HiOutlineBuildingStorefront, HiOutlineTruck, HiOutlineSparkles, HiOutlineCheckCircle } from 'react-icons/hi2';
-import { MOCK_ACTIVE_ORDER } from '../api/mock.data';
+import { useOrder } from '../hooks/useOrder';
+import { OrderStatus } from '../types/order.types';
 import './OrderTrackingPage.css';
 
 const { Title, Text } = Typography;
 
 const STEPS = [
-  { id: 'PLACED', title: 'Order Placed', icon: HiOutlineCheck },
-  { id: 'CONFIRMED', title: 'Confirmed', icon: HiOutlineBuildingStorefront },
-  { id: 'PREPARING', title: 'Preparing', icon: HiOutlineSparkles },
-  { id: 'OUT_FOR_DELIVERY', title: 'On the way', icon: HiOutlineTruck },
-  { id: 'DELIVERED', title: 'Delivered', icon: HiOutlineCheckCircle },
+  { id: OrderStatus.PLACED, title: 'Order Placed', icon: HiOutlineCheck },
+  { id: OrderStatus.ACCEPTED, title: 'Confirmed', icon: HiOutlineBuildingStorefront },
+  { id: OrderStatus.PREPARING, title: 'Preparing', icon: HiOutlineSparkles },
+  { id: OrderStatus.READY, title: 'Ready', icon: HiOutlineSparkles },
+  { id: OrderStatus.OUT_FOR_DELIVERY, title: 'On the way', icon: HiOutlineTruck },
+  { id: OrderStatus.DELIVERED, title: 'Delivered', icon: HiOutlineCheckCircle },
 ];
 
 export function OrderTrackingPage() {
-  const [currentStepIndex, setCurrentStepIndex] = useState(2); // Start at PREPARING
-  const order = MOCK_ACTIVE_ORDER;
+  const { id } = useParams<{ id: string }>();
+  const { data: order, isLoading } = useOrder(Number(id));
 
-  // Simulate progress every 5 seconds for demonstration
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentStepIndex((prev) => (prev < STEPS.length - 1 ? prev + 1 : prev));
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
+  if (isLoading) {
+    return (
+      <Flex justify="center" align="center" style={{ minHeight: '60vh' }}>
+        <Spin size="large" />
+      </Flex>
+    );
+  }
+
+  if (!order) {
+    return (
+      <Flex justify="center" align="center" style={{ minHeight: '60vh' }}>
+        <Title level={4}>Order not found</Title>
+      </Flex>
+    );
+  }
+
+  const currentStepIndex = STEPS.findIndex(step => step.id === order.status);
+  
+  // Calculate ETA if available
+  let etaText = 'Calculating ETA...';
+  if (order.status === OrderStatus.PLACED) {
+    etaText = 'Awaiting Confirmation...';
+  } else if (order.status === OrderStatus.CANCELLED) {
+    etaText = 'Order Cancelled';
+  } else if (order.status === OrderStatus.DELIVERED) {
+    etaText = 'Order Delivered!';
+  } else if (order.estimatedDeliveryTime) {
+    const diffMs = new Date(order.estimatedDeliveryTime).getTime() - new Date().getTime();
+    const minutesLeft = Math.max(0, Math.floor(diffMs / (1000 * 60)));
+    etaText = `Arriving in ${minutesLeft} mins`;
+  }
 
   return (
     <div className="tracking-container">
@@ -36,17 +63,15 @@ export function OrderTrackingPage() {
               ORDER #{order.orderNumber}
             </Tag>
             <Title level={2} style={{ margin: 0, fontWeight: 900 }}>
-              {currentStepIndex === 4 ? 'Order Delivered!' : `Arriving in ${order.estimatedDeliveryMinutes - currentStepIndex * 5} mins`}
+              {etaText}
             </Title>
             <Text type="secondary" style={{ fontSize: '1rem' }}>
-              Your order from <Text strong>{order.restaurantName}</Text> is in progress
+              Your order from <Text strong>{order.restaurant?.name || 'Restaurant'}</Text> is in progress
             </Text>
           </div>
-          <img 
-            src={order.restaurantImage} 
-            alt={order.restaurantName} 
-            style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)', objectFit: 'cover' }} 
-          />
+          <div style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--color-bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <HiOutlineBuildingStorefront size={40} color="var(--color-text-secondary)" />
+          </div>
         </Flex>
 
         {/* Live Stepper */}
@@ -70,18 +95,18 @@ export function OrderTrackingPage() {
         </div>
       </div>
 
-      {/* Delivery Partner Details Card */}
-      {order.deliveryPartner && (
+      {/* Delivery Partner Details Card (Hidden until real API provides it) */}
+      {false && (
         <div className="tracking-card">
           <Title level={5} style={{ marginBottom: 16, fontWeight: 800 }}>Delivery Valet Assigned</Title>
           <div className="driver-card">
             <Flex align="center" gap={16}>
               <Avatar size={48} style={{ backgroundColor: 'var(--color-primary)' }}>
-                {order.deliveryPartner.name[0]}
+                D
               </Avatar>
               <div>
-                <Title level={5} style={{ margin: 0, fontWeight: 700 }}>{order.deliveryPartner.name}</Title>
-                <Text type="secondary" style={{ fontSize: '0.85rem' }}>Vehicle: {order.deliveryPartner.vehicleNumber}</Text>
+                <Title level={5} style={{ margin: 0, fontWeight: 700 }}>Driver Name</Title>
+                <Text type="secondary" style={{ fontSize: '0.85rem' }}>Vehicle: --</Text>
               </div>
             </Flex>
             <Button type="primary" shape="round" icon={<HiOutlinePhone />} size="large">
@@ -94,9 +119,9 @@ export function OrderTrackingPage() {
       {/* Order Details Accordion */}
       <div className="tracking-card">
         <Title level={5} style={{ marginBottom: 12, fontWeight: 800 }}>Items Ordered</Title>
-        {order.items.map((item, idx) => (
+        {order.items?.map((item, idx) => (
           <Flex key={idx} justify="space-between" align="center" style={{ marginBottom: 8 }}>
-            <Text strong>{item.name} x {item.quantity}</Text>
+            <Text strong>{item.itemName} x {item.quantity}</Text>
             <Text strong>₹{item.price * item.quantity}</Text>
           </Flex>
         ))}

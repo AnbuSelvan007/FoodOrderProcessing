@@ -1,9 +1,11 @@
 import { Layout, Menu, Flex, Typography, Dropdown, Avatar, Switch } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { HiOutlineChartPie, HiOutlineBuildingStorefront, HiOutlineClipboardDocumentList, HiOutlineRectangleGroup, HiOutlineArrowRightOnRectangle, HiOutlineSun, HiOutlineMoon } from 'react-icons/hi2';
+import { HiOutlineChartPie, HiOutlineBuildingStorefront, HiOutlineClipboardDocumentList, HiOutlineRectangleGroup, HiOutlineArrowRightOnRectangle, HiOutlineSun, HiOutlineMoon, HiOutlineUser } from 'react-icons/hi2';
 import { useAuthStore } from '@/modules/auth/store/auth.store';
 import { useThemeStore } from '@/shared/store/theme.store';
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery';
+import { useMyRestaurants, useUpdateAvailability } from '@/modules/restaurant/hooks/useMyRestaurants';
+import { RestaurantAvailability } from '@/modules/restaurant/types/restaurant.types';
 import './DashboardLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -16,12 +18,24 @@ export function OwnerLayout() {
   const { theme, setTheme } = useThemeStore();
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  const { data: restaurants = [] } = useMyRestaurants();
+  const restaurant = restaurants[0];
+  const { mutate: updateStoreAvailability } = useUpdateAvailability();
+
   const menuItems = [
     { key: '/owner/dashboard', icon: <HiOutlineChartPie />, label: 'Dashboard' },
     { key: '/owner/orders', icon: <HiOutlineClipboardDocumentList />, label: 'Live Orders' },
     { key: '/owner/menu', icon: <HiOutlineRectangleGroup />, label: 'Menu Items' },
     { key: '/owner/restaurants', icon: <HiOutlineBuildingStorefront />, label: 'Restaurant Info' },
   ];
+
+  const handleToggleStoreStatus = (checked: boolean) => {
+    if (!restaurant) return;
+    updateStoreAvailability({
+      restaurantId: restaurant.id,
+      availability: checked ? RestaurantAvailability.OPEN : RestaurantAvailability.CLOSED,
+    });
+  };
 
   return (
     <Layout className="dashboard-layout">
@@ -48,7 +62,13 @@ export function OwnerLayout() {
           <Flex justify="space-between" align="center" style={{ width: '100%' }}>
             <Flex align="center" gap={12}>
               <Text strong>Store Status:</Text>
-              <Switch defaultChecked checkedChildren="OPEN" unCheckedChildren="CLOSED" style={{ backgroundColor: 'var(--color-primary)' }} />
+              <Switch 
+                checked={restaurant?.availability === RestaurantAvailability.OPEN} 
+                onChange={handleToggleStoreStatus}
+                checkedChildren="OPEN" 
+                unCheckedChildren="CLOSED" 
+                style={{ backgroundColor: restaurant?.availability === RestaurantAvailability.OPEN ? 'var(--color-primary)' : undefined }} 
+              />
             </Flex>
 
             <Flex align="center" gap={16}>
@@ -63,6 +83,8 @@ export function OwnerLayout() {
               <Dropdown
                 menu={{
                   items: [
+                    { key: 'profile', label: 'My Profile', icon: <HiOutlineUser />, onClick: () => navigate('/owner/profile') },
+                    { type: 'divider' },
                     { key: 'logout', label: 'Logout', danger: true, icon: <HiOutlineArrowRightOnRectangle />, onClick: () => { logout(); navigate('/login'); } },
                   ],
                 }}
